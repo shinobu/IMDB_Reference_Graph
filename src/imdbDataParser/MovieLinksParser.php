@@ -6,6 +6,7 @@ class MovieLinksParser
     public $linksSet = array();
     public $filePointer = null;
     public $mainMovie = null;
+
     public function parseIMDBFile($file)
     {
         try {
@@ -58,15 +59,84 @@ class MovieLinksParser
 
     private function parseLinksLine($string)
     {
-        if (strcmp((substr($line, -3), '})\n') == 0) {
+        if (strcmp(substr($line, -3), '})\n') == 0) {
             return;
         }
 
         if($this->mainMovie !== null) {
             //go through all different kinds of possible references and add for them entries
+            if (strcmp(substr($line,0, 12), '  (references') == 0) {
+
+            }
+
+            if (strcmp(substr($line,0, 12), '  (referenced in') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (features') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (featured in') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (follows') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (followed by') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (spin off') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (spin off from') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (spoofs') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (spoofed in') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (edited into') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (edited from') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (remake of') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (remade as') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (??') == 0) {
+                
+            }
+
+            if (strcmp(substr($line,0, 12), '  (version of') == 0) {
+                
+            }
         }
 
         return;
+    }
+
+    private addMovie($line) {
+
+        
+        return $movieVariable
     }
 
     public function resetParser()
