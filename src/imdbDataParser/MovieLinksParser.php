@@ -4,13 +4,13 @@ class MovieLinksParser
     //root gets set in the parser
     public $moviesSet = array();
     public $linksSet = array();
-    public $filePointer = null;
     public $mainMovie = null;
 
     public function parseIMDBFile($file)
     {
+        $filepointer = null;
         try {
-            $this->filePointer = fopen($file, 'r+');
+            $filePointer = fopen($file, 'r+');
         } catch (Exception $e) {
             throw new Exception('Unable to open file with path: ' . $file, 0, $e);
         }
@@ -18,14 +18,14 @@ class MovieLinksParser
         //skip to the data -needs testing
         $header = true;
         while ($header) {
-            $line = fgets($this->filePointer);
+            $line = fgets($filePointer);
             if(strcmp($line,'MOVIE LINKS LIST\n') == 0) {
                 $header = false
                 //skip next line with only ===
-                fgets($this->filePointer);
+                fgets($filePointer);
             }
         }
-        while (($line = fgets($this->filePointer)) !== false) {
+        while (($line = fgets($filePointer)) !== false) {
 
             //empty line, seperates main movies
             if (strcmp($line, '\n') == 0) {
@@ -42,7 +42,7 @@ class MovieLinksParser
             //line must be the mainMovie, check if its a series (series are ignored)
             if (strcmp(substr($line, -2), '}\n') == 0) {
                 //skip until the next empty line, because references onto a movie are irrelevant
-                while (($line = fgets($this->filePointer)) !== false) {
+                while (($line = fgets($filePointer)) !== false) {
                     if(strcmp($line, '\n') == 0) {
                         $this->mainMovie = null;
                         break;
@@ -52,7 +52,7 @@ class MovieLinksParser
             }
 
             //correct mainMovie
-            $mainMovie = addMovie($line);
+            $this->mainMovie = array($line, false);
         }
         return $query
     }
@@ -63,70 +63,166 @@ class MovieLinksParser
             return;
         }
 
-        if($this->mainMovie !== null) {
+        if ($this->mainMovie !== null) {
             //go through all different kinds of possible references and add for them entries
-            if (strcmp(substr($line,0, 12), '  (references') == 0) {
-
+            if (strcmp(substr($line,0, 13), '  (references') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($this->mainMovie[0], $refMovie[0], 'references')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (referenced in') == 0) {
-                
+            if (strcmp(substr($line,0, 16), '  (referenced in') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($refMovie[0], $this->mainMovie[0], 'references')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (features') == 0) {
-                
+            if (strcmp(substr($line,0, 11), '  (features') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($this->mainMovie[0], $refMovie[0], 'features')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (featured in') == 0) {
-                
+            if (strcmp(substr($line,0, 14), '  (featured in') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($refMovie[0], $this->mainMovie[0], 'features')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (follows') == 0) {
-                
+            if (strcmp(substr($line,0, 10), '  (follows') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($this->mainMovie[0], $refMovie[0], 'follows')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (followed by') == 0) {
-                
+            if (strcmp(substr($line,0, 14), '  (followed by') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($refMovie[0], $this->mainMovie[0], 'follows')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (spin off') == 0) {
-                
+            if (strcmp(substr($line,0, 11), '  (spin off') == 0 && !(strcmp(substr($line,0, 16), '  (spin off from') == 0)) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($this->mainMovie[0], $refMovie[0], 'spin off')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (spin off from') == 0) {
-                
+            if (strcmp(substr($line,0, 16), '  (spin off from') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($refMovie[0], $this->mainMovie[0], 'spin off')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (spoofs') == 0) {
-                
+            if (strcmp(substr($line,0, 9), '  (spoofs') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($this->mainMovie[0], $refMovie[0], 'spoofs')
+                }
             }
 
             if (strcmp(substr($line,0, 12), '  (spoofed in') == 0) {
-                
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($refMovie[0], $this->mainMovie[0], 'spoofs')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (edited into') == 0) {
-                
+            if (strcmp(substr($line,0, 14), '  (edited into') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($this->mainMovie[0], $refMovie[0], 'edited into')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (edited from') == 0) {
-                
+            if (strcmp(substr($line,0, 14), '  (edited from') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($refMovie[0], $this->mainMovie[0], 'edited into')
+                }
             }
 
             if (strcmp(substr($line,0, 12), '  (remake of') == 0) {
-                
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($this->mainMovie[0], $refMovie[0], 'remake of')
+                }
             }
 
             if (strcmp(substr($line,0, 12), '  (remade as') == 0) {
-                
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($refMovie[0], $this->mainMovie[0], 'remake of')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (??') == 0) {
-                
+            if (strcmp(substr($line,0, 13), '  (version of') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($this->mainMovie[0], $refMovie[0], 'version of')
+                }
             }
 
-            if (strcmp(substr($line,0, 12), '  (version of') == 0) {
-                
+            if (strcmp(substr($line,0, 32), '  (alternate language version of') == 0) {
+                $refMovie = $this->addMovie(substr($line,13,-1);
+                if ($refMovie[1]) {
+                    if (!$this->mainMovie[1]) {
+                        $this->mainMovie = $this->addMovie($this->mainMovie)
+                    }
+                    $this->addLink($this->mainMovie[0], $refMovie[0], 'alternate language version of')
+                }
             }
         }
 
@@ -135,8 +231,32 @@ class MovieLinksParser
 
     private addMovie($line) {
 
-        
+        $movieVariable = null;
+        $line = $trim($line);
+        $pattern = '/(\([0-9\?]{4}((\/[IVXLCD]+)?)\))/';
+        $matches = null;
+        preg_match_all($pattern, $line, $matches, PREG_OFFSET_CAPTURE);
+        if (count($matches[0]) > 0) {
+            $date = $matches[0][count(matches[0]-1)][0];
+            $movieName = trim(substr(0, $matches[0][count(matches[0]-1)][1]));
+            if (strcmp(substr($movieName, 0, 1), '"') == 0) {
+                $movieName = substr($movieName, 1, -1);
+            }
+            $movieVariable = array(
+                '`'. $movieName . '_' . $date . '`',
+                true
+            );
+            $neo4jCreate = 'CREATE (' . $movieVariable[0] . ":Movie { title: '" . $movieName . ", date: '" . $date . "' })";
+            $this->movieSet[$neo4jCreate] = 1;
+        }
         return $movieVariable
+    }
+
+    private addLink($mainMovie, $refMovie, $ref) {
+
+        $neo4jCreateLink = 'Create (' . $mainMovie[0] . ")-[REFTYPE { name = '" . $ref . "' }]->(" . $refMovie[0] . ')' 
+        $this->linksSet[$neo4jCreateLink] = 1;
+        return;
     }
 
     public function resetParser()
