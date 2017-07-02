@@ -5,6 +5,7 @@ class MovieLinksParser
     public $moviesSet = array();
     public $linksSet = array();
     public $mainMovie = null;
+    public $counter = 0;
 
     public function parseIMDBFile($file)
     {
@@ -20,7 +21,7 @@ class MovieLinksParser
         while ($header) {
             $line = fgets($filePointer);
             if(strcmp($line,'MOVIE LINKS LIST
-') == 0) {
+') == 0 || $line === false) {
                 $header = false;
                 //skip next line with only ===
                 fgets($filePointer);
@@ -68,161 +69,161 @@ class MovieLinksParser
             //go through all different kinds of possible references and add for them entries
             if (strcmp(substr($line,0, 13), '  (references') == 0) {
                 $refMovie = $this->addMovie(substr($line,13,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($this->mainMovie[0], $refMovie[0], 'references');
+                    $this->addLink($this->mainMovie[2], $refMovie[2], 'references');
                 }
             }
 
             if (strcmp(substr($line,0, 16), '  (referenced in') == 0) {
                 $refMovie = $this->addMovie(substr($line,16,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($refMovie[0], $this->mainMovie[0], 'references');
+                    $this->addLink($refMovie[2], $this->mainMovie[2], 'references');
                 }
             }
 
             if (strcmp(substr($line,0, 11), '  (features') == 0) {
                 $refMovie = $this->addMovie(substr($line,11,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($this->mainMovie[0], $refMovie[0], 'features');
+                    $this->addLink($this->mainMovie[2], $refMovie[2], 'features');
                 }
             }
 
             if (strcmp(substr($line,0, 14), '  (featured in') == 0) {
                 $refMovie = $this->addMovie(substr($line,14,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($refMovie[0], $this->mainMovie[0], 'features');
+                    $this->addLink($refMovie[2], $this->mainMovie[2], 'features');
                 }
             }
 
             if (strcmp(substr($line,0, 10), '  (follows') == 0) {
                 $refMovie = $this->addMovie(substr($line,10,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($this->mainMovie[0], $refMovie[0], 'follows');
+                    $this->addLink($this->mainMovie[2], $refMovie[2], 'follows');
                 }
             }
 
             if (strcmp(substr($line,0, 14), '  (followed by') == 0) {
                 $refMovie = $this->addMovie(substr($line,14,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($refMovie[0], $this->mainMovie[0], 'follows');
+                    $this->addLink($refMovie[2], $this->mainMovie[2], 'follows');
                 }
             }
 
             if (strcmp(substr($line,0, 11), '  (spin off') == 0 && !(strcmp(substr($line,0, 16), '  (spin off from') == 0)) {
                 $refMovie = $this->addMovie(substr($line,11,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($this->mainMovie[0], $refMovie[0], 'spin off');
+                    $this->addLink($this->mainMovie[2], $refMovie[2], 'spin off');
                 }
             }
 
             if (strcmp(substr($line,0, 16), '  (spin off from') == 0) {
                 $refMovie = $this->addMovie(substr($line,16,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($refMovie[0], $this->mainMovie[0], 'spin off');
+                    $this->addLink($refMovie[2], $this->mainMovie[2], 'spin off');
                 }
             }
 
             if (strcmp(substr($line,0, 9), '  (spoofs') == 0) {
                 $refMovie = $this->addMovie(substr($line,9,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($this->mainMovie[0], $refMovie[0], 'spoofs');
+                    $this->addLink($this->mainMovie[2], $refMovie[2], 'spoofs');
                 }
             }
 
             if (strcmp(substr($line,0, 12), '  (spoofed in') == 0) {
                 $refMovie = $this->addMovie(substr($line,12,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($refMovie[0], $this->mainMovie[0], 'spoofs');
+                    $this->addLink($refMovie[2], $this->mainMovie[2], 'spoofs');
                 }
             }
 
             if (strcmp(substr($line,0, 14), '  (edited into') == 0) {
                 $refMovie = $this->addMovie(substr($line,12,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($this->mainMovie[0], $refMovie[0], 'edited into');
+                    $this->addLink($this->mainMovie[2], $refMovie[2], 'edited into');
                 }
             }
 
             if (strcmp(substr($line,0, 14), '  (edited from') == 0) {
                 $refMovie = $this->addMovie(substr($line,12,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($refMovie[0], $this->mainMovie[0], 'edited into');
+                    $this->addLink($refMovie[2], $this->mainMovie[2], 'edited into');
                 }
             }
 
             if (strcmp(substr($line,0, 12), '  (remake of') == 0) {
                 $refMovie = $this->addMovie(substr($line,12,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($this->mainMovie[0], $refMovie[0], 'remake of');
+                    $this->addLink($this->mainMovie[2], $refMovie[2], 'remake of');
                 }
             }
 
             if (strcmp(substr($line,0, 12), '  (remade as') == 0) {
                 $refMovie = $this->addMovie(substr($line,12,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($refMovie[0], $this->mainMovie[0], 'remake of');
+                    $this->addLink($refMovie[2], $this->mainMovie[2], 'remake of');
                 }
             }
 
             if (strcmp(substr($line,0, 13), '  (version of') == 0) {
                 $refMovie = $this->addMovie(substr($line,13,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($this->mainMovie[0], $refMovie[0], 'version of');
+                    $this->addLink($this->mainMovie[2], $refMovie[2], 'version of');
                 }
             }
 
             if (strcmp(substr($line ,0 , 32), '  (alternate language version of') == 0) {
                 $refMovie = $this->addMovie(substr($line,32,-1));
-                if ($refMovie[1] && isset($this->mainMovie)) {
+                if (isset($refMovie[1]) && $refMovie[1] && isset($this->mainMovie)) {
                     if (!$this->mainMovie[1]) {
                         $this->mainMovie = $this->addMovie($this->mainMovie[0]);
                     }
-                    $this->addLink($this->mainMovie[0], $refMovie[0], 'alternate language version of');
+                    $this->addLink($this->mainMovie[2], $refMovie[2], 'alternate language version of');
                 }
             }
         }
@@ -245,25 +246,39 @@ class MovieLinksParser
             }
             $movieVariable = array(
                 '`'. $movieName . '_' . $date . '`',
-                true
+                true,
+                -1
             );
-            $neo4jCreate = 'CREATE (' . $movieVariable[0] . ":Movie { title: '" . $movieName . ", date: '" . $date . "' })";
-            $this->moviesSet[$neo4jCreate] = 1;
+            if (!isset($this->movieSet[$movieVariable[0]])) {
+                $this->moviesSet[$movieVariable[0]] = array(
+                    'id' => $this->counter, 
+                    'title' => $movieName,
+                    'date' => $date
+                );
+                $this->counter++;
+            }
+        }
+        if (isset($movieVariable[0])) {
+            $movieVariable[2] = $this->moviesSet[$movieVariable[0]]['id'];
+        }
+        else {
+            $movieVariable = null;
         }
         return $movieVariable;
     }
 
-    private function addLink($mainMovie, $refMovie, $ref) {
+    private function addLink($mainMovieID, $refMovieID, $ref) {
 
-        $neo4jCreateLink = 'Create (' . $mainMovie . ")-[REFTYPE { name = '" . $ref . "' }]->(" . $refMovie . ')';
-        $this->linksSet[$neo4jCreateLink] = 1;
+        $line = $mainMovieID . ',' . $refMovieID . ',' . '"' . $ref . '"';
+        $this->linksSet[$line] = 1;
         return;
     }
 
     public function resetParser()
     {
         //cheap way
-        unset($movieSet);
-        unset($linksSet);
+        unset($this->movieSet);
+        unset($this->linksSet);
+        unset($this->counter);
     }
 }

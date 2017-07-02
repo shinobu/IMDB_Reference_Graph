@@ -1,0 +1,16 @@
+{
+    "name": "shinobu/imdbc_reference_graph",
+    "description": "Explore movie references in a neo4j graph",
+    "type": "application",
+    "keywords": ["Neo4j", "Graph", "Visualization", "IMDB"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Fabian Niehoff",
+            "email": "niehoff.fabian@web.de"
+        }
+    ],
+    "require": {
+        "graphaware/neo4j-php-client": "^4.0"
+    }
+}

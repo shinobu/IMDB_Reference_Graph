@@ -1,21 +1,22 @@
 <?php 
 require_once(realpath(dirname(__FILE__)) . '/MovieLinksParser.php');
-//require_once(../../vendor/autoload.php);
 
 global $argv;
 if (isset($argv[1])) {
-    echo "start";
+    //echo "start";
     $parser = new MovieLinksParser();
     $parser->parseIMDBFile($argv[1]);
-    echo "end";
-    $neo4jQuery = '';
-    foreach ($parser->moviesSet as $movie=>$value) {
-        $neo4jQuery .= $movie . PHP_EOL;
+    //echo "end";
+    $movieCSV = 'id,title,date' . PHP_EOL;
+    foreach ($parser->moviesSet as $key=>$movie) {
+        $movieCSV .= $movie['id'] . ',"' . $movie['title'] . '","' . $movie['date'] . '"' . PHP_EOL;
     }
+    $linksCSV = 'mainid,refid,type' . PHP_EOL;
     foreach ($parser->linksSet as $link=>$value) {
-        $neo4jQuery .= $link . PHP_EOL;
+        $linksCSV .= $link . PHP_EOL;
     }
-    echo $neo4jQuery;
+    file_put_contents(getcwd() . '/movie.csv', $movieCSV);
+    file_put_contents(getcwd() . '/links.csv', $linksCSV);
 } else {
     echo "missing filename";
 }
