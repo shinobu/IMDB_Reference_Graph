@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>IMDB Graph Relation Visualization</title>
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="css/index.css">
+</head>
+
+<body>
+    <div id="header" style="height: 5%; min-height: 5%; background-color: darkgray; color:white; padding-top: 1px; padding-left: 5px; position: relative; ";>
+        <h4>IMDB Graph Relation Visualization</h4>
+    </div>
+    <div id="middle" style="height: 85%; min-height: 85%;  position: relative">
+        <div id="graph"
+             style="width: 70%; height: 100%; min-width: 70%; min-height: 100%; background-color:lightslategray; float: left; ">
+
+        </div>
+        <div id="userInput"
+             style="witdh: 30%; height: 100%; min-width: 30%; min-height: 100%; background-color: darkslategrey; float: right; ">
+            <div class="ui-widget" style=" margin-left: 1em; margin-right: 1em; margin-top: 10px; color:white">
+                <form name="MovieAdder">
+                    <p><label for="movies">Movie Search:</label></p>
+                    <p style="margin-bottom: 2.5em">
+                        <input id="movies">
+                        <button type="movieAdder" onsubmit="addMovie()" style="color:black;">Add Movie</button>
+                    </p>
+                    <p>Relations:</p>
+                    <p><input type="checkbox" id="alternateLanguageVersionOf" value="alternate language version of"
+                              checked>alternate language version of</p>
+                    <p><input type="checkbox" id="editedInto" value="edited into" checked>edited into</p>
+                    <p><input type="checkbox" id="features" value="features" checked>features</p>
+                    <p><input type="checkbox" id="follows" value="follows" checked>follows</p>
+                    <p><input type="checkbox" id="references" value="references" checked>references</p>
+                    <p><input type="checkbox" id="remakeOf" value="remake of" checked>remake of</p>
+                    <p><input type="checkbox" id="spinOff" value="spin off" checked>spin off</p>
+                    <p><input type="checkbox" id="spoofs" value="spoofs" checked>spoofs</p>
+                    <p><input type="checkbox" id="versionOf" value="version of" checked>version of</p>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div id="node" style="height: 10%; min-height: 10%; background-color:lightslategray; float: left; padding: auto; overflow: auto; padding: 0px; position: relative";">
+
+    </div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+        integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+        crossorigin="anonymous"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="js/neo4jQueryProxy.js"></script>
+<script>
+var neo4jAutEnc = btoa("neo4j:neo4j1"),
+    neo4jServer = "/api", // http://localhost:7474/
+    nodes,
+    links;
+
+//window.neo4jQuery({"statements":[{"statement": "match (n:Movie) return n"}]}, test, neo4jServer, neo4jAutEnc);
+
+//function test (data) {
+//    var test = data.results[0].data;
+//    console.log(test[0].row[1]);
+//}
+</script>
+</body>
+</html>

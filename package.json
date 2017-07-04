@@ -1,0 +1,17 @@
+{
+  "name": "IMDB_Reference_Graph",
+  "version": "1.0.0",
+  "description": "**This Graph tool is still in early development**",
+  "main": "src/js/neo4jQuery.js",
+  "scripts": {
+    "start": "webpack-dev-server"
+  },
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://github.com/shinobu/IMDB_Reference_Graph#readme",
+  "devDependencies": {
+    "webpack": "^3.0.0",
+    "webpack-dev-server": "^2.5.0"
+  },
+  "dependencies": {}
+}
