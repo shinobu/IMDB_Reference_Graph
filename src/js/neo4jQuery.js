@@ -1,5 +1,5 @@
 var neo4jQuery = window.neo4jQuery || {};
-var neo4jQuery = function neo4jQuery(query, callback, url, auth) {
+var neo4jQuery = function neo4jQuery(query, callback, url, auth, responseCallback) {
     $.ajaxSetup({
         headers: {
             // Add authorization header in all ajax requests
@@ -15,7 +15,12 @@ var neo4jQuery = function neo4jQuery(query, callback, url, auth) {
         contentType: "application/json;charset=UTF-8",
         data: JSON.stringify(query),
         success: function (data, textStatus, jqXHR) {
-            callback(data);
+            if (responseCallback !== undefined) {
+                callback(data, responseCallback);
+            }
+            else {
+                callback(data);
+            }
         },
         error: function (jqXHR, textStatus, errorThrown) {
             alert("Connection to Database not possible");

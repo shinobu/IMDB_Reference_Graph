@@ -9,7 +9,17 @@
 
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" type="text/css" href="css/index.css">
+
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="http://code.jquery.com/ui/1.12.1/jquery-ui.js" ></script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="js/neo4jQueryProxy.js"></script>
 </head>
 
 <body>
@@ -20,12 +30,12 @@
 
         </div>
         <div id="userInput">
-            <div class="ui-widget" style=" margin-left: 1em; margin-right: 1em; margin-top: 10px; color:white">
-                <form name="MovieAdder">
+            <div class="ui-widget" style=" margin-left: 1em; margin-right: 1em; margin-top: 10px; color:white; text-align: center;">
+                <div id="form" name="MovieAdder" style="display: inline-block; text-align: left;">
                     <p><label for="movies">Movie Search:</label></p>
                     <p style="margin-bottom: 2.5em">
-                        <input id="movies">
-                        <button type="movieAdder" onsubmit="addMovie()" style="color:black;">Add Movie</button>
+                        <input id="movies" style="color:black;">
+                        <button type="movieAdder" onclick="addMovie()" style="color:black;">Add Movie</button>
                     </p>
                     <p>Relations:</p>
                     <p><input type="checkbox" id="alternateLanguageVersionOf" value="alternate language version of"
@@ -37,26 +47,64 @@
                     <p><input type="checkbox" id="remakeOf" value="remake of" checked>remake of</p>
                     <p><input type="checkbox" id="spinOff" value="spin off" checked>spin off</p>
                     <p><input type="checkbox" id="spoofs" value="spoofs" checked>spoofs</p>
-                    <p><input type="checkbox" id="versionOf" value="version of" checked>version of</p>
-                </form>
+                    <p style="margin-bottom: 1em;"><input type="checkbox" id="versionOf" value="version of" checked>version of</p>
+                    <button type="refresh" onsubmit="refreshGraph()" style="color:black;">Refresh Graph</button>
+                </div>
+                <div class="ui-widget" style="margin-top:2em; display: inline-block; text-align: left">
+                    Chosen Movies:
+                    <div id="movieList" style="margin-top:1em; display: inline-block; text-align: left"></div>
+                </div>
             </div>
         </div>
     <div id="node">
 
     </div>
-
-<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-    <!-- Latest compiled and minified JavaScript -->
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
-        integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-        crossorigin="anonymous"></script>
-<script src="https://d3js.org/d3.v4.min.js"></script>
-<script src="js/neo4jQueryProxy.js"></script>
 <script>
 var neo4jAutEnc = btoa("neo4j:neo4j1"),
     neo4jServer = "/api", // http://localhost:7474/
+    chosenMovies = [],
     nodes,
     links;
+
+$(function () {
+    $("#movies").autocomplete({
+        source: function( request, response ) {
+            window.neo4jQuery({"statements":[{"statement": "MATCH (n:Movie) WHERE n.title STARTS WITH \"" + request.term + "\" RETURN n.title + \" \" + n.date"}]}, autoSearchDataTransformation, neo4jServer, neo4jAutEnc, response);
+        },
+        minLength: 3,
+    });
+});
+
+function autoSearchDataTransformation(data, response) {
+    var dataArray = [];
+    console.log(data);
+    if(data.results.length > 0) {
+        for (var i = 0, len = data.results[0].data.length; i < len; i++) {
+            dataArray.push({ "label":data.results[0].data[i].row[0], "value":data.results[0].data[i].row[0]});
+        }
+    }
+    response(dataArray);
+}
+
+function addMovie() {
+    if (document.getElementById("movies").value == "") {
+        alert("Textbox is empty");
+        return;
+    }
+    var tmp = document.getElementById("movies").value, split;
+    document.getElementById("movies").value = "";
+    split = tmp.lastIndexOf(" (");
+    if (split != -1) {
+        window.neo4jQuery({"statements":[{"statement": "MATCH (n:Movie) WHERE n.title = \"" + tmp.substring(0, split) + "\" AND n.date = \"" + tmp.substring(split + 1, tmp.length) + "\" RETURN n.title + \" \" + n.date"}]}, addMovieResponse, neo4jServer, neo4jAutEnc, undefined);
+    } else {
+        alert("No Existing Movie");
+    }
+}
+
+function addMovieResponse() {
+
+}
+//match (n:Movie) where n.title starts with "'Allo 'Allo!" return n.title + " " + n.date
 
 //window.neo4jQuery({"statements":[{"statement": "match (n:Movie) return n"}]}, test, neo4jServer, neo4jAutEnc);
 
