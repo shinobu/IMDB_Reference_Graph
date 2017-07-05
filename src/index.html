@@ -31,7 +31,7 @@
         </div>
         <div id="userInput">
             <div class="ui-widget" style=" margin-left: 1em; margin-right: 1em; margin-top: 10px; color:white; text-align: center;">
-                <div id="form" name="MovieAdder" style="display: inline-block; text-align: left;">
+                <div id="form" name="MovieAdder" style="display: inline-block; text-align: left; ">
                     <p><label for="movies">Movie Search:</label></p>
                     <p style="margin-bottom: 2.5em">
                         <input id="movies" style="color:black;">
@@ -50,9 +50,9 @@
                     <p style="margin-bottom: 1em;"><input type="checkbox" id="versionOf" value="version of" checked>version of</p>
                     <button type="refresh" onsubmit="refreshGraph()" style="color:black;">Refresh Graph</button>
                 </div>
-                <div class="ui-widget" style="margin-top:2em; display: inline-block; text-align: left">
-                    Chosen Movies:
-                    <div id="movieList" style="margin-top:1em; display: inline-block; text-align: left"></div>
+                <div class="ui-widget" style="margin-top:2em; display: inline-block; text-align: left; width: 100%">
+                    <p>Chosen Movies:</p>
+                    <div id="movieList" style="margin-top:1em; display: inline-block; text-align: left;"></div>
                 </div>
             </div>
         </div>
@@ -64,7 +64,8 @@ var neo4jAutEnc = btoa("neo4j:neo4j1"),
     neo4jServer = "/api", // http://localhost:7474/
     chosenMovies = [],
     nodes,
-    links;
+    links,
+    notRefreshing = true;
 
 $(function () {
     $("#movies").autocomplete({
@@ -101,9 +102,81 @@ function addMovie() {
     }
 }
 
-function addMovieResponse() {
+function addMovieResponse(data) {
+    if(data.results.length < 1) {
+        alert("No Existing Movie");
+        return;
+    }
+    if (chosenMovies.indexOf(data.results[0].data[0].row[0]) == -1) {
+       chosenMovies.push(data.results[0].data[0].row[0]);
+    }
+    //loadChosenMovies();
+    console.log(chosenMovies);
+}
+
+function refreshGraph() {
+    var chosenValues = getData(), tmpQuery;
+    if (chosenMovies.length < 1 && chosenValues[2].length < 1) {
+        alert("No Movies Chosen");
+        return;
+    }
+    tmpQuery = "Match (n:Movie)-[r:Relation]-(m:Movie) Where (";
+    for (var i = 0, length = chosenValues[0].length; i<length;i++) {
+        tmpQuery += ("(n.title = \"" + chosenValues[0][i] + "\" AND n.date = \"" + chosenValues[1][i] + "\")")
+        if(i != (chosenValues[0].length - 1)) {
+            tmpQuery += " OR ";
+        }
+    }
+    tmpQuery += ") AND r.type in " + JSON.stringify(chosenValues[2]) + " Return n,m,r";
+    window.neo4jQuery({"statements":[{"statement": tmpQuery}]}, refreshGraphResponse, neo4jServer, neo4jAutEnc, undefined)
+}
+
+function getData() {
+    var dataArray = [], tmpArrayMovies = [], tmpArrayDates = [], tmpArrayRefs = [];
+    for (var i = 0, length = chosenMovies.length; i < length; i++) {
+        split = chosenMovies[i].lastIndexOf(" (");
+        tmpArrayMovies.push(chosenMovies[i].substring(0, split));
+        tmpArrayDates.push(chosenMovies[i].substring(split + 1, chosenMovies[i].length));
+    }
+    dataArray.push(tmpArrayMovies);
+    dataArray.push(tmpArrayDates);
+    if (document.getElementById("alternateLanguageVersionOf").checked == true) {
+        tmpArrayRefs.push(document.getElementById("alternateLanguageVersionOf").value);
+    }
+    if (document.getElementById("editedInto").checked == true) {
+        tmpArrayRefs.push(document.getElementById("editedInto").value);
+    }
+    if (document.getElementById("features").checked == true) {
+        tmpArrayRefs.push(document.getElementById("features").value);
+    }
+    if (document.getElementById("follows").checked == true) {
+        tmpArrayRefs.push(document.getElementById("follows").value);
+    }
+    if (document.getElementById("references").checked == true) {
+        tmpArrayRefs.push(document.getElementById("references").value);
+    }
+    if (document.getElementById("remakeOf").checked == true) {
+        tmpArrayRefs.push(document.getElementById("remakeOf").value);
+    }
+    if (document.getElementById("spinOff").checked == true) {
+        tmpArrayRefs.push(document.getElementById("spinOff").value);
+    }
+    if (document.getElementById("spoofs").checked == true) {
+        tmpArrayRefs.push(document.getElementById("spoofs").value);
+    }
+    if (document.getElementById("versionOf").checked == true) {
+        tmpArrayRefs.push(document.getElementById("versionOf").value);
+    }
+    dataArray.push(tmpArrayRefs);
+    return dataArray;
+}
+
+function refreshGraphResponse(data) {
 
 }
+
+
+
 //match (n:Movie) where n.title starts with "'Allo 'Allo!" return n.title + " " + n.date
 
 //window.neo4jQuery({"statements":[{"statement": "match (n:Movie) return n"}]}, test, neo4jServer, neo4jAutEnc);
