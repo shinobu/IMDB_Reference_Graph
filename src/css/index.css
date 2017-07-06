@@ -83,3 +83,33 @@ body {
     /* prevent horizontal scrollbar */
     overflow-x: hidden;
 }
+
+.link {
+    fill: none;
+    stroke: #000;
+    stroke-width: 3px;
+}
+
+#licensing {
+    fill: green;
+}
+
+.link.licensing {
+    stroke: green;
+}
+
+.link.resolved {
+    stroke-dasharray: 0,2 1;
+}
+
+circle {
+    fill: #ADD8E6;
+    stroke: #333;
+    stroke-width: 1.5px;
+}
+
+text {
+    font: 12px sans-serif;
+    pointer-events: none;
+    //text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}

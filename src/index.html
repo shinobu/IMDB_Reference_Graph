@@ -18,13 +18,13 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
             integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
             crossorigin="anonymous"></script>
-    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
     <script src="js/neo4jQueryProxy.js"></script>
 </head>
 
 <body>
     <div id="header">
-        <h4>IMDB Graph Relation Visualization</h4>
+        <h4 style="margin-left: 5px;">IMDB Graph Relation Visualization</h4>
     </div>
         <div id="graph">
 
@@ -48,7 +48,7 @@
                     <p><input type="checkbox" id="spinOff" value="spin off" checked>spin off</p>
                     <p><input type="checkbox" id="spoofs" value="spoofs" checked>spoofs</p>
                     <p style="margin-bottom: 1em;"><input type="checkbox" id="versionOf" value="version of" checked>version of</p>
-                    <button type="refresh" onsubmit="refreshGraph()" style="color:black;">Refresh Graph</button>
+                    <button type="refresh" onclick="refreshGraph()" style="color:black;">Refresh Graph</button>
                 </div>
                 <div class="ui-widget" style="margin-top:2em; display: inline-block; text-align: left; width: 100%">
                     <p>Chosen Movies:</p>
@@ -63,8 +63,17 @@
 var neo4jAutEnc = btoa("neo4j:neo4j1"),
     neo4jServer = "/api", // http://localhost:7474/
     chosenMovies = [],
-    nodes,
-    links,
+    nodes = {},
+    links = [],
+    node,
+    link,
+    path,
+    circle,
+    text,
+    pathtext,
+    svg,
+    force,
+    fill,
     notRefreshing = true;
 
 $(function () {
@@ -78,7 +87,6 @@ $(function () {
 
 function autoSearchDataTransformation(data, response) {
     var dataArray = [];
-    console.log(data);
     if(data.results.length > 0) {
         for (var i = 0, len = data.results[0].data.length; i < len; i++) {
             dataArray.push({ "label":data.results[0].data[i].row[0], "value":data.results[0].data[i].row[0]});
@@ -110,8 +118,7 @@ function addMovieResponse(data) {
     if (chosenMovies.indexOf(data.results[0].data[0].row[0]) == -1) {
        chosenMovies.push(data.results[0].data[0].row[0]);
     }
-    //loadChosenMovies();
-    console.log(chosenMovies);
+    loadChosenMovies();
 }
 
 function refreshGraph() {
@@ -120,14 +127,14 @@ function refreshGraph() {
         alert("No Movies Chosen");
         return;
     }
-    tmpQuery = "Match (n:Movie)-[r:Relation]-(m:Movie) Where (";
+    tmpQuery = "Match (n:Movie)-[r:Relation]->(m:Movie) Where (";
     for (var i = 0, length = chosenValues[0].length; i<length;i++) {
-        tmpQuery += ("(n.title = \"" + chosenValues[0][i] + "\" AND n.date = \"" + chosenValues[1][i] + "\")")
+        tmpQuery += ("(n.title = \"" + chosenValues[0][i] + "\" AND n.date = \"" + chosenValues[1][i] + "\") OR " + "(m.title = \"" + chosenValues[0][i] + "\" AND m.date = \"" + chosenValues[1][i] + "\")");
         if(i != (chosenValues[0].length - 1)) {
             tmpQuery += " OR ";
         }
     }
-    tmpQuery += ") AND r.type in " + JSON.stringify(chosenValues[2]) + " Return n,m,r";
+    tmpQuery += ") AND r.type in " + JSON.stringify(chosenValues[2]) + " Return n.title + \" \" + n.date ,m.title + \" \" + m.date ,r.type";
     window.neo4jQuery({"statements":[{"statement": tmpQuery}]}, refreshGraphResponse, neo4jServer, neo4jAutEnc, undefined)
 }
 
@@ -172,19 +179,198 @@ function getData() {
 }
 
 function refreshGraphResponse(data) {
+    links = [];
+    for (var i = 0, len = data.results[0].data.length; i < len; i++) {
+        links.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
+    }
 
+    nodes = {};
+// Compute the distinct nodes from the links.
+    links.forEach(function(link) {
+        link.source = nodes[link.source] || (nodes[link.source] = {title: link.source});
+        link.target = nodes[link.target] || (nodes[link.target] = {title: link.target});
+        console.log(nodes);
+    });
+    setD3();
 }
 
+function setD3() {
+    var width = $("#graph").width() - 5,
+        height = $("#graph").height() - 5,
+        fill = d3.scale.category10();
+    document.getElementById("graph").innerHTML = "";
+
+    force = d3.layout.force()
+        .nodes(d3.values(nodes))
+        .links(links)
+        .size([width, height])
+        .linkDistance(150)
+        .charge(-300)
+        .on("tick", tick)
+        .start();
+
+    svg = d3.select("#graph").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+// Per-type markers, as they don't inherit styles.
+//    svg.append("defs").selectAll("marker")
+//        .enter().append("marker")
+//        .attr("id", "link")
+//        .attr("viewBox", "0 -5 10 10")
+//        .attr("refX", 15)
+//        .attr("refY", -1.5)
+//        .attr("markerWidth", 6)
+//        .attr("markerHeight", 6)
+//        .attr("orient", "auto")
+//        .append("path")
+//        .attr("d", "M0,-5L10,0L0,5");
+
+    path = svg.append("g").selectAll("path")
+        .data(force.links())
+        .enter().append("path")
+        .attr("class", function(d) { return "link " + d.type; })
+        .attr("marker-end", function(d) { return "url(#" + d.type + ")"; })
+        .attr("id", function(d,i) {
+            return "linkId_" + i;
+        })
+        .on("click", function (d) {
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.type + "</p>";
+        });
+
+    pathtext = svg.append("g").selectAll("pathtext")
+        .data(force.links())
+        .enter().append("text")
+        .attr("dx", 20)
+        .attr("dy", 20)
+        .append("textPath")
+        .attr("xlink:href", function(d,i) {
+            return "#linkId_" + i;
+        })
+        .text(function(d) { return d.type; });
+
+    //    link.append("text")
+//        .attr("class", function(d){ return d.type })
+//        .attr("dx", 0)
+//        .attr("dy", ".1em")
+//        .style("font-size","10px")
+//        .style("font", "sans-serif")
+//        .attr("text-anchor", "middle")
+//        .style("fill", "white")
+//        .text(function(d) {return d.type});
+
+    circle = svg.append("g").selectAll("circle")
+        .data(force.nodes())
+        .enter().append("circle")
+        .attr("r", 10)
+        .call(force.drag)
+        .on("click", function (d) {
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.title + "</p>";
+        });
+
+    text = svg.append("g").selectAll("text")
+        .data(force.nodes())
+        .enter().append("text")
+        .attr("x", 12)
+        .attr("y", ".31em")
+        .text(function(d) { return d.title; });
 
 
-//match (n:Movie) where n.title starts with "'Allo 'Allo!" return n.title + " " + n.date
+//    svg = d3.select("#graph").append("svg")
+//        .attr("width", width)
+//        .attr("height", height);
+//
+//    force = d3.layout.force()
+//        .charge(-300)
+//        .gravity(0.3)
+//        .size([width, height])
+//        .nodes(d3.values(nodes))
+//        .links(links)
+//        .start();
+//
+//    link = svg.selectAll("line")
+//        .data(force.links())
+//        .enter()
+//        .append("line")
+//        .on("click", function (d) {
+//            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">d.type</p>";
+//        })
+//        .style("stroke", function (d) {
+//            return fill(d.value)
+//        });
+//
+//
+//    node = svg.selectAll("g.node")
+//        .data(force.nodes())
+//        .enter().append("g")
+//        .attr("class", "node")
+//        .attr("transform", function(d) {
+//            return "translate(" + d.x + "," + d.y + ")";
+//        })
+//        .call(force.drag);
+//
+//    node.append("circle")
+//        .attr("r", 12)
+//        .style("fill", function(d) {
+//            return fill(d.type)
+//        })
+//        .on("click", function(d) {
+//            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">d.title</p>";
+//        });
+//
+//    node.append("text")
+//        .attr("class", function(d){ return d.title })
+//        .attr("dx", 0)
+//        .attr("dy", ".1em")
+//        .style("font-size","10px")
+//        .style("font", "sans-serif")
+//        .attr("text-anchor", "middle")
+//        .style("fill", "white")
+//        .text(function(d) {return d.title});
+//
+//    link.append("text")
+//        .attr("class", function(d){ return d.type })
+//        .attr("dx", 0)
+//        .attr("dy", ".1em")
+//        .style("font-size","10px")
+//        .style("font", "sans-serif")
+//        .attr("text-anchor", "middle")
+//        .style("fill", "white")
+//        .text(function(d) {return d.type});
+//
+//    force.on("tick", function() {
+//        link.attr("x1", function(d) { return d.source.x; })
+//            .attr("y1", function(d) { return d.source.y; })
+//            .attr("x2", function(d) { return d.target.x; })
+//            .attr("y2", function(d) { return d.target.y; });
+//        node.attr("transform", function(d) {
+//            return "translate(" + d.x + "," + d.y + ")";
+//        });
+//    });
+}
 
-//window.neo4jQuery({"statements":[{"statement": "match (n:Movie) return n"}]}, test, neo4jServer, neo4jAutEnc);
+// Use elliptical arc path segments to doubly-encode directionality.
+function tick() {
+    path.attr("d", linkArc);
+    circle.attr("transform", transform);
+    text.attr("transform", transform);
+}
 
-//function test (data) {
-//    var test = data.results[0].data;
-//    console.log(test[0].row[1]);
-//}
+function linkArc(d) {
+    var dx = d.target.x - d.source.x,
+        dy = d.target.y - d.source.y,
+        dr = Math.sqrt(dx * dx + dy * dy);
+    return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+}
+
+function transform(d) {
+    return "translate(" + d.x + "," + d.y + ")";
+}
+
+function loadChosenMovies() {
+    
+}
+
 </script>
 </body>
 </html>
