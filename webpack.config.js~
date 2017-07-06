@@ -20,7 +20,7 @@ module.exports = {
                 changeOrigin: true
             }
         },
-        watchOptions: { aggregateTimeout: 3000, poll: 10000 },
+        watchOptions: { aggregateTimeout: 300, poll: 1000 },
         headers: {
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",

@@ -216,21 +216,23 @@ function setD3() {
 // Per-type markers, as they don't inherit styles.
 //    svg.append("defs").selectAll("marker")
 //        .enter().append("marker")
-//        .attr("id", "link")
+//        .attr("id", "arrow")
 //        .attr("viewBox", "0 -5 10 10")
 //        .attr("refX", 15)
 //        .attr("refY", -1.5)
 //        .attr("markerWidth", 6)
 //        .attr("markerHeight", 6)
 //        .attr("orient", "auto")
+//        .style("fill", "black")
 //        .append("path")
-//        .attr("d", "M0,-5L10,0L0,5");
+//        .attr("d", "M0,-5L10,0L0,5")
+//        .attr("class", "arrowHead");
 
     path = svg.append("g").selectAll("path")
         .data(force.links())
         .enter().append("path")
         .attr("class", function(d) { return "link " + d.type; })
-        .attr("marker-end", function(d) { return "url(#" + d.type + ")"; })
+        .attr("marker-end", "url(#arrow)")
         .attr("id", function(d,i) {
             return "linkId_" + i;
         })
@@ -248,16 +250,6 @@ function setD3() {
             return "#linkId_" + i;
         })
         .text(function(d) { return d.type; });
-
-    //    link.append("text")
-//        .attr("class", function(d){ return d.type })
-//        .attr("dx", 0)
-//        .attr("dy", ".1em")
-//        .style("font-size","10px")
-//        .style("font", "sans-serif")
-//        .attr("text-anchor", "middle")
-//        .style("fill", "white")
-//        .text(function(d) {return d.type});
 
     circle = svg.append("g").selectAll("circle")
         .data(force.nodes())
@@ -368,7 +360,27 @@ function transform(d) {
 }
 
 function loadChosenMovies() {
-    
+    var tmpHtml = "";
+    chosenMovies.forEach(function(movie, index) {
+        tmpHtml += "<p style=\"margin:5px;\">" + movie + "<button type=\"deleteChosenMovie\" onclick=\"deleteChosenMovie(" + index + ")\" style=\"color:black; margin-left:5px;\">Delete Movie</button>" + "</p>";
+    });
+    document.getElementById("movieList").innerHTML = tmpHtml;
+}
+
+function deleteChosenMovie(index) {
+    var tmpArr = [];
+    while (chosenMovies.length > 0) {
+        if(chosenMovies.length-1 == index) {
+            chosenMovies.pop();
+        } else {
+            tmpArr.push(chosenMovies.pop());
+        }
+    }
+    chosenMovies = [];
+    while (tmpArr.length > 0) {
+        chosenMovies.push(tmpArr.pop());
+    }
+    loadChosenMovies();
 }
 
 </script>

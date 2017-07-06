@@ -9,7 +9,7 @@ if (isset($argv[1])) {
     //echo "end";
     $movieCSV = 'id,title,date' . PHP_EOL;
     foreach ($parser->moviesSet as $key=>$movie) {
-        $movieCSV .= $movie['id'] . ',"' . $movie['title'] . '","' . $movie['date'] . '"' . PHP_EOL;
+        $movieCSV .= $movie['id'] . ',"' . $parser->escapeDoubleQuotes($movie['title']) . '","' . $movie['date'] . '"' . PHP_EOL;
     }
     $linksCSV = 'mainid,refid,type' . PHP_EOL;
     foreach ($parser->linksSet as $link=>$value) {

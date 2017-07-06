@@ -281,4 +281,9 @@ class MovieLinksParser
         unset($this->linksSet);
         unset($this->counter);
     }
+
+    public function escapeDoubleQuotes($title) 
+    {
+        return str_replace('"', '\"', $title);
+    }
 }

@@ -19,5 +19,3 @@ CREATE (n)-[:Relation { type: csvLine.type }]->(m)
 remove the index and id
 
 add index on title, date and type
-
-(needs big heap)
