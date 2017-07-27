@@ -249,7 +249,7 @@ class MovieLinksParser
                 true,
                 -1
             );
-            if (!isset($this->movieSet[$movieVariable[0]])) {
+            if (!isset($this->moviesSet[$movieVariable[0]])) {
                 $this->moviesSet[$movieVariable[0]] = array(
                     'id' => $this->counter, 
                     'title' => $movieName,
@@ -277,7 +277,7 @@ class MovieLinksParser
     public function resetParser()
     {
         //cheap way
-        unset($this->movieSet);
+        unset($this->moviesSet);
         unset($this->linksSet);
         unset($this->counter);
     }

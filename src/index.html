@@ -35,7 +35,7 @@
                     <p><label for="movies">Movie Search:</label></p>
                     <p style="margin-bottom: 2.5em">
                         <input id="movies" style="color:black;">
-                        <button type="movieAdder" onclick="addMovie()" style="color:black;">Add Movie</button>
+                        <button type="movieAdder" onclick="initiate()" style="color:black;">Start Exploration</button>
                     </p>
                     <p>Relations:</p>
                     <p><input type="checkbox" id="alternateLanguageVersionOf" value="alternate language version of"
@@ -48,11 +48,6 @@
                     <p><input type="checkbox" id="spinOff" value="spin off" checked>spin off</p>
                     <p><input type="checkbox" id="spoofs" value="spoofs" checked>spoofs</p>
                     <p style="margin-bottom: 1em;"><input type="checkbox" id="versionOf" value="version of" checked>version of</p>
-                    <button type="refresh" onclick="refreshGraph()" style="color:black;">Refresh Graph</button>
-                </div>
-                <div class="ui-widget" style="margin-top:2em; display: inline-block; text-align: left; width: 100%">
-                    <p>Chosen Movies:</p>
-                    <div id="movieList" style="margin-top:1em; display: inline-block; text-align: left;"></div>
                 </div>
             </div>
         </div>
@@ -79,7 +74,7 @@ var neo4jAutEnc = btoa("neo4j:neo4j1"),
 $(function () {
     $("#movies").autocomplete({
         source: function( request, response ) {
-            window.neo4jQuery({"statements":[{"statement": "MATCH (n:Movie) WHERE n.title STARTS WITH \"" + request.term + "\" RETURN n.title + \" \" + n.date"}]}, autoSearchDataTransformation, neo4jServer, neo4jAutEnc, response);
+            window.neo4jQuery({"statements":[{"statement": "MATCH (n:Movie) WHERE n.title STARTS WITH \"" + request.term + "\" RETURN n.title + \" \" + n.date LIMIT 100"}]}, autoSearchDataTransformation, neo4jServer, neo4jAutEnc, response);
         },
         minLength: 3,
     });
@@ -95,58 +90,48 @@ function autoSearchDataTransformation(data, response) {
     response(dataArray);
 }
 
-function addMovie() {
+function initiate() {
     if (document.getElementById("movies").value == "") {
         alert("Textbox is empty");
         return;
     }
     var tmp = document.getElementById("movies").value, split;
-    document.getElementById("movies").value = "";
     split = tmp.lastIndexOf(" (");
     if (split != -1) {
-        window.neo4jQuery({"statements":[{"statement": "MATCH (n:Movie) WHERE n.title = \"" + tmp.substring(0, split) + "\" AND n.date = \"" + tmp.substring(split + 1, tmp.length) + "\" RETURN n.title + \" \" + n.date"}]}, addMovieResponse, neo4jServer, neo4jAutEnc, undefined);
+        window.neo4jQuery({"statements":[{"statement": "MATCH (n:Movie) WHERE n.title = \"" + tmp.substring(0, split) + "\" AND n.date = \"" + tmp.substring(split + 1, tmp.length) + "\" RETURN n.title + \" \" + n.date LIMIT 1"}]}, initiateResponse, neo4jServer, neo4jAutEnc, undefined);
     } else {
         alert("No Existing Movie");
     }
 }
 
-function addMovieResponse(data) {
+function initiateResponse(data) {
     if(data.results.length < 1) {
         alert("No Existing Movie");
         return;
     }
-    if (chosenMovies.indexOf(data.results[0].data[0].row[0]) == -1) {
-       chosenMovies.push(data.results[0].data[0].row[0]);
-    }
-    loadChosenMovies();
+    getInitialData(data.results[0].data[0].row[0]);
 }
 
-function refreshGraph() {
-    var chosenValues = getData(), tmpQuery;
-    if (chosenMovies.length < 1 && chosenValues[2].length < 1) {
-        alert("No Movies Chosen");
-        return;
-    }
+function getInitialData(data) {
+    var refs = getRefs(), tmpQuery, split;
+    split = data.lastIndexOf(" )");
     tmpQuery = "Match (n:Movie)-[r:Relation]->(m:Movie) Where (";
-    for (var i = 0, length = chosenValues[0].length; i<length;i++) {
-        tmpQuery += ("(n.title = \"" + chosenValues[0][i] + "\" AND n.date = \"" + chosenValues[1][i] + "\") OR " + "(m.title = \"" + chosenValues[0][i] + "\" AND m.date = \"" + chosenValues[1][i] + "\")");
-        if(i != (chosenValues[0].length - 1)) {
-            tmpQuery += " OR ";
-        }
-    }
-    tmpQuery += ") AND r.type in " + JSON.stringify(chosenValues[2]) + " Return n.title + \" \" + n.date ,m.title + \" \" + m.date ,r.type";
-    window.neo4jQuery({"statements":[{"statement": tmpQuery}]}, refreshGraphResponse, neo4jServer, neo4jAutEnc, undefined)
+    tmpQuery += "(n.title = \"" + data.substring(0,split) + "\" AND n.date = \"" + data.substring(split+1, data.length) + "\") OR " + "(m.title = \"" + data.substring(0,split) + "\" AND m.date = \"" + data.substring(split+1, data.length) + "\")";
+    tmpQuery += ") AND r.type in " + JSON.stringify(refs) + " Return n.title + \" \" + n.date ,m.title + \" \" + m.date ,r.type";
+    window.neo4jQuery({"statements":[{"statement": tmpQuery}]}, setD3, neo4jServer, neo4jAutEnc, undefined);
 }
 
-function getData() {
-    var dataArray = [], tmpArrayMovies = [], tmpArrayDates = [], tmpArrayRefs = [];
-    for (var i = 0, length = chosenMovies.length; i < length; i++) {
-        split = chosenMovies[i].lastIndexOf(" (");
-        tmpArrayMovies.push(chosenMovies[i].substring(0, split));
-        tmpArrayDates.push(chosenMovies[i].substring(split + 1, chosenMovies[i].length));
-    }
-    dataArray.push(tmpArrayMovies);
-    dataArray.push(tmpArrayDates);
+function updateD3(data) {
+    var refs = getRefs(), tmpQuery, split;
+    split = data.lastIndexOf(" )");
+    tmpQuery = "Match (n:Movie)-[r:Relation]->(m:Movie) Where (";
+    tmpQuery += "(n.title = \"" + data.substring(0,split) + "\" AND n.date = \"" + data.substring(split+1, data.length) + "\") OR " + "(m.title = \"" + data.substring(0,split) + "\" AND m.date = \"" + data.substring(split+1, data.length) + "\")";
+    tmpQuery += ") AND r.type in " + JSON.stringify(refs) + " Return n.title + \" \" + n.date ,m.title + \" \" + m.date ,r.type";
+    window.neo4jQuery({"statements":[{"statement": tmpQuery}]}, updateD3Response, neo4jServer, neo4jAutEnc, undefined);
+}
+
+function getRefs() {
+    var tmpArrayRefs = [];
     if (document.getElementById("alternateLanguageVersionOf").checked == true) {
         tmpArrayRefs.push(document.getElementById("alternateLanguageVersionOf").value);
     }
@@ -189,12 +174,23 @@ function refreshGraphResponse(data) {
     links.forEach(function(link) {
         link.source = nodes[link.source] || (nodes[link.source] = {title: link.source});
         link.target = nodes[link.target] || (nodes[link.target] = {title: link.target});
-        console.log(nodes);
     });
     setD3();
 }
 
 function setD3() {
+    links = [];
+    for (var i = 0, len = data.results[0].data.length; i < len; i++) {
+        links.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
+    }
+
+    nodes = {};
+// Compute the distinct nodes from the links.
+    links.forEach(function(link) {
+        link.source = nodes[link.source] || (nodes[link.source] = {title: link.source});
+        link.target = nodes[link.target] || (nodes[link.target] = {title: link.target});
+    });
+
     var width = $("#graph").width() - 5,
         height = $("#graph").height() - 5,
         fill = d3.scale.category10();
@@ -359,28 +355,19 @@ function transform(d) {
     return "translate(" + d.x + "," + d.y + ")";
 }
 
-function loadChosenMovies() {
-    var tmpHtml = "";
-    chosenMovies.forEach(function(movie, index) {
-        tmpHtml += "<p style=\"margin:5px;\">" + movie + "<button type=\"deleteChosenMovie\" onclick=\"deleteChosenMovie(" + index + ")\" style=\"color:black; margin-left:5px;\">Delete Movie</button>" + "</p>";
-    });
-    document.getElementById("movieList").innerHTML = tmpHtml;
-}
+function updateD3Response(data) {
+    var tmplinks, tmpnodes; //think how you will check if links and nodes exist already
+    tmplinks = [];
+    for (var i = 0, len = data.results[0].data.length; i < len; i++) {
+        links.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
+    }
 
-function deleteChosenMovie(index) {
-    var tmpArr = [];
-    while (chosenMovies.length > 0) {
-        if(chosenMovies.length-1 == index) {
-            chosenMovies.pop();
-        } else {
-            tmpArr.push(chosenMovies.pop());
-        }
-    }
-    chosenMovies = [];
-    while (tmpArr.length > 0) {
-        chosenMovies.push(tmpArr.pop());
-    }
-    loadChosenMovies();
+    tmpnodes = {};
+// Compute the distinct nodes from the links.
+    links.forEach(function(link) {
+        link.source = nodes[link.source] || (nodes[link.source] = {title: link.source});
+        link.target = nodes[link.target] || (nodes[link.target] = {title: link.target});
+    });
 }
 
 </script>
