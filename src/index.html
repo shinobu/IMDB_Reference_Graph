@@ -121,11 +121,11 @@ function getInitialData(data) {
     window.neo4jQuery({"statements":[{"statement": tmpQuery}]}, setD3, neo4jServer, neo4jAutEnc, undefined);
 }
 
-function updateD3(data) {
+function updateD3(movieNode) {
     var refs = getRefs(), tmpQuery, split;
-    split = data.lastIndexOf(" )");
+    split = movieNode.lastIndexOf(" )");
     tmpQuery = "Match (n:Movie)-[r:Relation]->(m:Movie) Where (";
-    tmpQuery += "(n.title = \"" + data.substring(0,split) + "\" AND n.date = \"" + data.substring(split+1, data.length) + "\") OR " + "(m.title = \"" + data.substring(0,split) + "\" AND m.date = \"" + data.substring(split+1, data.length) + "\")";
+    tmpQuery += "(n.title = \"" + movieNode.substring(0,split) + "\" AND n.date = \"" + movieNode.substring(split+1, movieNode.length) + "\") OR " + "(m.title = \"" + movieNode.substring(0,split) + "\" AND m.date = \"" + movieNode.substring(split+1, movieNode.length) + "\")";
     tmpQuery += ") AND r.type in " + JSON.stringify(refs) + " Return n.title + \" \" + n.date ,m.title + \" \" + m.date ,r.type";
     window.neo4jQuery({"statements":[{"statement": tmpQuery}]}, updateD3Response, neo4jServer, neo4jAutEnc, undefined);
 }
@@ -254,6 +254,7 @@ function setD3() {
         .call(force.drag)
         .on("click", function (d) {
             document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.title + "</p>";
+            updateD3(d.title);
         });
 
     text = svg.append("g").selectAll("text")
@@ -356,18 +357,47 @@ function transform(d) {
 }
 
 function updateD3Response(data) {
-    var tmplinks, tmpnodes; //think how you will check if links and nodes exist already
+    //add new links and nodes to links/nodes arrays to check for duplicates
+    var tmplinks, tmpnodes, tmpvar;
     tmplinks = [];
     for (var i = 0, len = data.results[0].data.length; i < len; i++) {
-        links.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
+        tmpvar = { "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]}
+        if (!containsObject(tmpvar, links)) {
+            tmplinks.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
+            links.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
+        }
     }
 
     tmpnodes = {};
 // Compute the distinct nodes from the links.
-    links.forEach(function(link) {
-        link.source = nodes[link.source] || (nodes[link.source] = {title: link.source});
-        link.target = nodes[link.target] || (nodes[link.target] = {title: link.target});
+    tmplinks.forEach(function(link) {
+        link.source = tmpnodes[link.source] || (tmpnodes[link.source] = {title: link.source});
+        link.target = tmpnodes[link.target] || (tmpnodes[link.target] = {title: link.target});
     });
+    existingNodes = intersection(tmpnodes, nodes);
+    var i;
+    for (i=0; i<existingNodes; i++) {
+        delete tmpnodes[existingNodes[i]];
+    }
+    for (var nodeTitle in tmpnodes) {
+        nodes[nodeTitle] = tmpnodes[nodeTitle];
+    }
+    //start adding d3 stuff push push push
+}
+
+function containsObject(obj, list) {
+    var i;
+    for (i = 0; i < list.length; i++) {
+        if (list[i] === obj) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function intersection(o1, o2) {
+    return Object.keys(o1).filter({}.hasOwnProperty.bind(o2));
 }
 
 </script>
