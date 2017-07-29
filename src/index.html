@@ -232,7 +232,7 @@ function setD3(data) {
 //        .attr("class", "arrowHead");
 
     path = svg.append("g").selectAll("path")
-        .data(force.links())
+        .data(links)
         .enter().append("path")
         .attr("class", function(d) { return "link " + d.type; })
         .attr("marker-end", "url(#arrow)")
@@ -244,7 +244,7 @@ function setD3(data) {
         });
 
     pathtext = svg.append("g").selectAll("pathtext")
-        .data(force.links())
+        .data(links)
         .enter().append("text")
         .attr("dx", 20)
         .attr("dy", 20)
@@ -255,7 +255,7 @@ function setD3(data) {
         .text(function(d) { return d.type; });
 
     circle = svg.append("g").selectAll("circle")
-        .data(force.nodes())
+        .data(d3.values(nodes))
         .enter().append("circle")
         .attr("r", 10)
         .call(force.drag)
@@ -265,7 +265,7 @@ function setD3(data) {
         });
 
     text = svg.append("g").selectAll("text")
-        .data(force.nodes())
+        .data(d3.values(nodes))
         .enter().append("text")
         .attr("x", 12)
         .attr("y", ".31em")
@@ -364,41 +364,119 @@ function transform(d) {
 }
 
 function updateD3Response(data) {
+console.log(links);
+    var width = $("#graph").width() - 5,
+    height = $("#graph").height() - 5;
     //add new links and nodes to links/nodes arrays to check for duplicates
-    var tmplinks, tmpnodes, tmpvar;
+    var tmplinks;
     tmplinks = [];
     for (var i = 0, len = data.results[0].data.length; i < len; i++) {
-        tmpvar = { "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]}
-        if (!containsObject(tmpvar, links)) {
-            tmplinks.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
-            links.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
-        }
+        tmplinks.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
     }
 
-    tmpnodes = {};
 // Compute the distinct nodes from the links.
     tmplinks.forEach(function(link) {
-        link.source = tmpnodes[link.source] || (tmpnodes[link.source] = {title: link.source});
-        link.target = tmpnodes[link.target] || (tmpnodes[link.target] = {title: link.target});
+        link.source = nodes[link.source] || (nodes[link.source] = {title: link.source});
+        link.target = nodes[link.target] || (nodes[link.target] = {title: link.target});
     });
-    existingNodes = intersection(tmpnodes, nodes);
-    var i;
-    for (i=0; i<existingNodes; i++) {
-        delete tmpnodes[existingNodes[i]];
-    }
-    for (var nodeTitle in tmpnodes) {
-        nodes[nodeTitle] = tmpnodes[nodeTitle];
-    }
-    tmpnodes = d3.values(tmpnodes);
-//    d3.interval(function() {
-        for (i=0; i<tmpnodes; i++) {
-            force.nodes.push(tmpnodes[i]);
+    for (var i = 0; i < tmplinks.length; i++) {
+        if (!containsObject(tmplinks[i], links)) {
+            console.log(i);
+            links.push(tmplinks[i]);
         }
-        for (i=0; i<tmplinks; i++) {
-            force.links.push(tmplinks[i]);
-        }
-        force.restart();
-//    }, 2000, Date.now + 1000);
+    }
+console.log(links);
+    
+    path = svg.selectAll("path")
+        .data(links)
+        .enter().append("path")
+        .attr("class", function(d) { return "link " + d.type; })
+        .attr("marker-end", "url(#arrow)")
+        .attr("id", function(d,i) {
+            return "linkId_" + i;
+        })
+        .on("click", function (d) {
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.type + "</p>";
+        });
+
+
+    circle = svg.selectAll("circle")
+        .data(d3.values(nodes))
+        .enter().append("circle")
+        .attr("r", 10)
+        .call(force.drag)
+        .on("click", function (d) {
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.title + "</p>";
+            updateD3(d.title);
+        });
+
+
+    pathtext = svg.selectAll("pathtext")
+        .data(links)
+        .enter().append("text")
+        .attr("dx", 20)
+        .attr("dy", 20)
+        .append("textPath")
+        .attr("xlink:href", function(d,i) {
+            return "#linkId_" + i;
+        })
+        .text(function(d) { return d.type; });
+
+    text = svg.selectAll("text")
+        .data(d3.values(nodes))
+        .enter().append("text")
+        .attr("x", 12)
+        .attr("y", ".31em")
+        .text(function(d) { return d.title; });
+    force = d3.layout.force()
+        .nodes(d3.values(nodes))
+        .links(links)
+        .size([width, height])
+        .linkDistance(150)
+        .charge(-800)
+        .on("tick", tick)
+        .start();
+/*
+    path = svg.append("g").selectAll("path")
+        .data(force.links())
+        .enter().append("path")
+        .attr("class", function(d) { return "link " + d.type; })
+        .attr("marker-end", "url(#arrow)")
+        .attr("id", function(d,i) {
+            return "linkId_" + i;
+        })
+        .on("click", function (d) {
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.type + "</p>";
+        });
+
+    pathtext = svg.append("g").selectAll("pathtext")
+        .data(force.links())
+        .enter().append("text")
+        .attr("dx", 20)
+        .attr("dy", 20)
+        .append("textPath")
+        .attr("xlink:href", function(d,i) {
+            return "#linkId_" + i;
+        })
+        .text(function(d) { return d.type; });
+
+    circle = svg.append("g").selectAll("circle")
+        .data(force.nodes())
+        .enter().append("circle")
+        .attr("r", 10)
+        .call(force.drag)
+        .on("click", function (d) {
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.title + "</p>";
+            updateD3(d.title);
+        });
+
+    text = svg.append("g").selectAll("text")
+        .data(force.nodes())
+        .enter().append("text")
+        .attr("x", 12)
+        .attr("y", ".31em")
+        .text(function(d) { return d.title; });*/
+    
 }
 
 function containsObject(obj, list) {
