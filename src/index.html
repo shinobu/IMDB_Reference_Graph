@@ -114,19 +114,27 @@ function initiateResponse(data) {
 
 function getInitialData(data) {
     var refs = getRefs(), tmpQuery, split;
-    split = data.lastIndexOf(" )");
-    tmpQuery = "Match (n:Movie)-[r:Relation]->(m:Movie) Where (";
-    tmpQuery += "(n.title = \"" + data.substring(0,split) + "\" AND n.date = \"" + data.substring(split+1, data.length) + "\") OR " + "(m.title = \"" + data.substring(0,split) + "\" AND m.date = \"" + data.substring(split+1, data.length) + "\")";
-    tmpQuery += ") AND r.type in " + JSON.stringify(refs) + " Return n.title + \" \" + n.date ,m.title + \" \" + m.date ,r.type";
+    split = data.lastIndexOf(" (");
+    //using union here is way faster than using Or, I could do it in a single Query using -[]- instead of -[]->, but then we would need to sort out afterwards, in which direction the connection actually moves
+    tmpQuery = "Match (n:Movie)-[r:Relation]->(m:Movie) Where ";
+    tmpQuery += "n.title = \"" + data.substring(0,split) + "\" AND n.date = \"" + data.substring(split+1, data.length) + "\" ";
+    tmpQuery += " AND r.type in " + JSON.stringify(refs) + " Return n.title + \" \" + n.date ,m.title + \" \" + m.date ,r.type";
+    tmpQuery += " UNION ALL Match (n:Movie)-[r:Relation]->(m:Movie) Where ";
+    tmpQuery += "m.title = \"" + data.substring(0,split) + "\" AND m.date = \"" + data.substring(split+1, data.length) + "\"";
+    tmpQuery += " AND r.type in " + JSON.stringify(refs) + " Return n.title + \" \" + n.date ,m.title + \" \" + m.date ,r.type";
     window.neo4jQuery({"statements":[{"statement": tmpQuery}]}, setD3, neo4jServer, neo4jAutEnc, undefined);
 }
 
 function updateD3(movieNode) {
     var refs = getRefs(), tmpQuery, split;
-    split = movieNode.lastIndexOf(" )");
-    tmpQuery = "Match (n:Movie)-[r:Relation]->(m:Movie) Where (";
-    tmpQuery += "(n.title = \"" + movieNode.substring(0,split) + "\" AND n.date = \"" + movieNode.substring(split+1, movieNode.length) + "\") OR " + "(m.title = \"" + movieNode.substring(0,split) + "\" AND m.date = \"" + movieNode.substring(split+1, movieNode.length) + "\")";
-    tmpQuery += ") AND r.type in " + JSON.stringify(refs) + " Return n.title + \" \" + n.date ,m.title + \" \" + m.date ,r.type";
+    split = movieNode.lastIndexOf(" (");
+    //same for this query as above
+    tmpQuery = "Match (n:Movie)-[r:Relation]->(m:Movie) Where ";
+    tmpQuery += "n.title = \"" + movieNode.substring(0,split) + "\" AND n.date = \"" + movieNode.substring(split+1, movieNode.length) + "\" ";
+    tmpQuery += " AND r.type in " + JSON.stringify(refs) + " Return n.title + \" \" + n.date ,m.title + \" \" + m.date ,r.type";
+    tmpQuery += " UNION ALL Match (n:Movie)-[r:Relation]->(m:Movie) Where ";
+    tmpQuery += "m.title = \"" + movieNode.substring(0,split) + "\" AND m.date = \"" + movieNode.substring(split+1, movieNode.length) + "\"";
+    tmpQuery += " AND r.type in " + JSON.stringify(refs) + " Return n.title + \" \" + n.date ,m.title + \" \" + m.date ,r.type";
     window.neo4jQuery({"statements":[{"statement": tmpQuery}]}, updateD3Response, neo4jServer, neo4jAutEnc, undefined);
 }
 
@@ -159,8 +167,7 @@ function getRefs() {
     if (document.getElementById("versionOf").checked == true) {
         tmpArrayRefs.push(document.getElementById("versionOf").value);
     }
-    dataArray.push(tmpArrayRefs);
-    return dataArray;
+    return tmpArrayRefs;
 }
 
 function refreshGraphResponse(data) {
@@ -178,7 +185,7 @@ function refreshGraphResponse(data) {
     setD3();
 }
 
-function setD3() {
+function setD3(data) {
     links = [];
     for (var i = 0, len = data.results[0].data.length; i < len; i++) {
         links.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
@@ -382,7 +389,16 @@ function updateD3Response(data) {
     for (var nodeTitle in tmpnodes) {
         nodes[nodeTitle] = tmpnodes[nodeTitle];
     }
-    //start adding d3 stuff push push push
+    tmpnodes = d3.values(tmpnodes);
+//    d3.interval(function() {
+        for (i=0; i<tmpnodes; i++) {
+            force.nodes.push(tmpnodes[i]);
+        }
+        for (i=0; i<tmplinks; i++) {
+            force.links.push(tmplinks[i]);
+        }
+        force.restart();
+//    }, 2000, Date.now + 1000);
 }
 
 function containsObject(obj, list) {
