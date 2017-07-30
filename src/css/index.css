@@ -35,7 +35,7 @@ body {
     left: 0px;
     width: 70%;
     bottom: 50px;
-    overflow: auto;
+    overflow: hidden;
     background-color:lightslategray;
 }
 
@@ -112,5 +112,5 @@ circle {
 text {
     font: 12px sans-serif;
     pointer-events: none;
-    //text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+    text-shadow: 0 1px 0 lightslategray, 1px 0 0 lightslategray, 0 -1px 0 lightslategray, -1px 0 0 lightslategray;
 }
