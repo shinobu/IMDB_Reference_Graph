@@ -170,20 +170,6 @@ function getRefs() {
     return tmpArrayRefs;
 }
 
-function refreshGraphResponse(data) {
-    links = [];
-    for (var i = 0, len = data.results[0].data.length; i < len; i++) {
-        links.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
-    }
-
-    nodes = {};
-// Compute the distinct nodes from the links.
-    links.forEach(function(link) {
-        link.source = nodes[link.source] || (nodes[link.source] = {title: link.source});
-        link.target = nodes[link.target] || (nodes[link.target] = {title: link.target});
-    });
-    setD3();
-}
 
 function setD3(data) {
     links = [];
@@ -191,20 +177,35 @@ function setD3(data) {
         links.push({ "source":data.results[0].data[i].row[0], "target":data.results[0].data[i].row[1], "type":data.results[0].data[i].row[2]});
     }
 
-    nodes = {};
+    nodes = [];
 // Compute the distinct nodes from the links.
     links.forEach(function(link) {
-        link.source = nodes[link.source] || (nodes[link.source] = {title: link.source});
-        link.target = nodes[link.target] || (nodes[link.target] = {title: link.target});
+        var sourceI, targetI;
+        sourceI = nodes.findIndex(i => i.title === link.source);
+        targetI = nodes.findIndex(i => i.title === link.target);
+        if(sourceI != -1) {
+            link.source = sourceI;
+        }
+        else {
+            nodes.push({title: link.source});
+            link.source = nodes.length -1;
+        }
+        if(targetI != -1) {
+            link.target = targetI;
+        }
+        else {
+            nodes.push({title: link.target});
+            link.target = nodes.length -1;
+        }
     });
-
+console.log(links);
     var width = $("#graph").width() - 5,
         height = $("#graph").height() - 5,
         fill = d3.scale.category10();
     document.getElementById("graph").innerHTML = "";
 
     force = d3.layout.force()
-        .nodes(d3.values(nodes))
+        .nodes(nodes)
         .links(links)
         .size([width, height])
         .linkDistance(150)
@@ -270,7 +271,6 @@ function setD3(data) {
         .attr("x", 12)
         .attr("y", ".31em")
         .text(function(d) { return d.title; });
-
 
 //    svg = d3.select("#graph").append("svg")
 //        .attr("width", width)
@@ -364,7 +364,6 @@ function transform(d) {
 }
 
 function updateD3Response(data) {
-console.log(links);
     var width = $("#graph").width() - 5,
     height = $("#graph").height() - 5;
     //add new links and nodes to links/nodes arrays to check for duplicates
@@ -376,8 +375,23 @@ console.log(links);
 
 // Compute the distinct nodes from the links.
     tmplinks.forEach(function(link) {
-        link.source = nodes[link.source] || (nodes[link.source] = {title: link.source});
-        link.target = nodes[link.target] || (nodes[link.target] = {title: link.target});
+        var sourceI, targetI;
+        sourceI = nodes.findIndex(i => i.title === link.source);
+        targetI = nodes.findIndex(i => i.title === link.target);
+        if(sourceI != -1) {
+            link.source = sourceI;
+        }
+        else {
+            nodes.push({title: link.source});
+            link.source = nodes.length -1;
+        }
+        if(targetI != -1) {
+            link.target = targetI;
+        }
+        else {
+            nodes.push({title: link.target});
+            link.target = nodes.length -1;
+        }
     });
     for (var i = 0; i < tmplinks.length; i++) {
         if (!containsObject(tmplinks[i], links)) {
@@ -386,9 +400,19 @@ console.log(links);
         }
     }
 console.log(links);
+console.log (d3.values(nodes));
+
+    force
+        .nodes(d3.values(nodes))
+        .links(links)
+        .size([width, height])
+        .linkDistance(150)
+        .charge(-800)
+        .on("tick", tick)
+
     
     path = svg.selectAll("path")
-        .data(links)
+        .data(force.links())
         .enter().append("path")
         .attr("class", function(d) { return "link " + d.type; })
         .attr("marker-end", "url(#arrow)")
@@ -399,20 +423,8 @@ console.log(links);
             document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.type + "</p>";
         });
 
-
-    circle = svg.selectAll("circle")
-        .data(d3.values(nodes))
-        .enter().append("circle")
-        .attr("r", 10)
-        .call(force.drag)
-        .on("click", function (d) {
-            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.title + "</p>";
-            updateD3(d.title);
-        });
-
-
     pathtext = svg.selectAll("pathtext")
-        .data(links)
+        .data(force.links())
         .enter().append("text")
         .attr("dx", 20)
         .attr("dy", 20)
@@ -422,20 +434,25 @@ console.log(links);
         })
         .text(function(d) { return d.type; });
 
+    circle = svg.selectAll("circle")
+        .data(force.nodes())
+        .enter().append("circle")
+        .attr("r", 10)
+        .call(force.drag)
+        .on("click", function (d) {
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.title + "</p>";
+            updateD3(d.title);
+        });
+
+
     text = svg.selectAll("text")
-        .data(d3.values(nodes))
+        .data(force.nodes())
         .enter().append("text")
         .attr("x", 12)
         .attr("y", ".31em")
         .text(function(d) { return d.title; });
-    force = d3.layout.force()
-        .nodes(d3.values(nodes))
-        .links(links)
-        .size([width, height])
-        .linkDistance(150)
-        .charge(-800)
-        .on("tick", tick)
-        .start();
+
+    force.start();
 /*
     path = svg.append("g").selectAll("path")
         .data(force.links())
@@ -479,10 +496,10 @@ console.log(links);
     
 }
 
-function containsObject(obj, list) {
+function containsObject(link, links) {
     var i;
-    for (i = 0; i < list.length; i++) {
-        if (list[i] === obj) {
+    for (i = 0; i < links.length; i++) {
+        if (links[i].source.index == link.source && links[i].target.index == link.target && links[i].type == link.type) {
             return true;
         }
     }
