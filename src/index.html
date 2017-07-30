@@ -198,15 +198,16 @@ function setD3(data) {
             link.target = nodes.length -1;
         }
     });
-console.log(links);
     var width = $("#graph").width() - 5,
         height = $("#graph").height() - 5,
-        fill = d3.scale.category10();
+        fill = d3.scale.category10(),
+        tmpLinks = links.slice(),
+        tmpNodes = nodes.slice();
     document.getElementById("graph").innerHTML = "";
 
     force = d3.layout.force()
-        .nodes(nodes)
-        .links(links)
+        .nodes(tmpNodes)
+        .links(tmpLinks)
         .size([width, height])
         .linkDistance(150)
         .charge(-800)
@@ -233,7 +234,7 @@ console.log(links);
 //        .attr("class", "arrowHead");
 
     path = svg.append("g").selectAll("path")
-        .data(links)
+        .data(force.links())
         .enter().append("path")
         .attr("class", function(d) { return "link " + d.type; })
         .attr("marker-end", "url(#arrow)")
@@ -245,7 +246,7 @@ console.log(links);
         });
 
     pathtext = svg.append("g").selectAll("pathtext")
-        .data(links)
+        .data(force.links())
         .enter().append("text")
         .attr("dx", 20)
         .attr("dy", 20)
@@ -256,17 +257,18 @@ console.log(links);
         .text(function(d) { return d.type; });
 
     circle = svg.append("g").selectAll("circle")
-        .data(d3.values(nodes))
+        .data(force.nodes())
         .enter().append("circle")
         .attr("r", 10)
         .call(force.drag)
         .on("click", function (d) {
+            if (d3.event.defaultPrevented) return;
             document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.title + "</p>";
             updateD3(d.title);
         });
 
     text = svg.append("g").selectAll("text")
-        .data(d3.values(nodes))
+        .data(force.nodes())
         .enter().append("text")
         .attr("x", 12)
         .attr("y", ".31em")
@@ -363,9 +365,7 @@ function transform(d) {
     return "translate(" + d.x + "," + d.y + ")";
 }
 
-function updateD3Response(data) {
-    var width = $("#graph").width() - 5,
-    height = $("#graph").height() - 5;
+function updateD3Response(data) {;
     //add new links and nodes to links/nodes arrays to check for duplicates
     var tmplinks;
     tmplinks = [];
@@ -395,66 +395,31 @@ function updateD3Response(data) {
     });
     for (var i = 0; i < tmplinks.length; i++) {
         if (!containsObject(tmplinks[i], links)) {
-            console.log(i);
             links.push(tmplinks[i]);
         }
     }
-console.log(links);
-console.log (d3.values(nodes));
 
-    force
-        .nodes(d3.values(nodes))
-        .links(links)
+    var width = $("#graph").width() - 5,
+        height = $("#graph").height() - 5,
+        fill = d3.scale.category10(),
+        tmpLinks = links.slice(),
+        tmpNodes = nodes.slice();
+    document.getElementById("graph").innerHTML = "";
+
+    force = d3.layout.force()
+        .nodes(tmpNodes)
+        .links(tmpLinks)
         .size([width, height])
         .linkDistance(150)
         .charge(-800)
         .on("tick", tick)
+        .start();
 
-    
-    path = svg.selectAll("path")
-        .data(force.links())
-        .enter().append("path")
-        .attr("class", function(d) { return "link " + d.type; })
-        .attr("marker-end", "url(#arrow)")
-        .attr("id", function(d,i) {
-            return "linkId_" + i;
-        })
-        .on("click", function (d) {
-            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.type + "</p>";
-        });
+    svg = d3.select("#graph").append("svg")
+        .attr("width", width)
+        .attr("height", height);
 
-    pathtext = svg.selectAll("pathtext")
-        .data(force.links())
-        .enter().append("text")
-        .attr("dx", 20)
-        .attr("dy", 20)
-        .append("textPath")
-        .attr("xlink:href", function(d,i) {
-            return "#linkId_" + i;
-        })
-        .text(function(d) { return d.type; });
-
-    circle = svg.selectAll("circle")
-        .data(force.nodes())
-        .enter().append("circle")
-        .attr("r", 10)
-        .call(force.drag)
-        .on("click", function (d) {
-            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.title + "</p>";
-            updateD3(d.title);
-        });
-
-
-    text = svg.selectAll("text")
-        .data(force.nodes())
-        .enter().append("text")
-        .attr("x", 12)
-        .attr("y", ".31em")
-        .text(function(d) { return d.title; });
-
-    force.start();
-/*
-    path = svg.append("g").selectAll("path")
+        path = svg.append("g").selectAll("path")
         .data(force.links())
         .enter().append("path")
         .attr("class", function(d) { return "link " + d.type; })
@@ -483,6 +448,7 @@ console.log (d3.values(nodes));
         .attr("r", 10)
         .call(force.drag)
         .on("click", function (d) {
+            if (d3.event.defaultPrevented) return;
             document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.title + "</p>";
             updateD3(d.title);
         });
@@ -492,12 +458,14 @@ console.log (d3.values(nodes));
         .enter().append("text")
         .attr("x", 12)
         .attr("y", ".31em")
-        .text(function(d) { return d.title; });*/
+        .text(function(d) { return d.title; });
     
 }
 
 function containsObject(link, links) {
     var i;
+    console.log(link);
+    console.log(links);
     for (i = 0; i < links.length; i++) {
         if (links[i].source.index == link.source && links[i].target.index == link.target && links[i].type == link.type) {
             return true;
