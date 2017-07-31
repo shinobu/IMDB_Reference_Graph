@@ -68,8 +68,7 @@ var neo4jAutEnc = btoa("neo4j:neo4j1"),
     pathtext,
     svg,
     force,
-    fill,
-    notRefreshing = true;
+    fill;
 
 $(function () {
     $("#movies").autocomplete({
@@ -242,7 +241,10 @@ function setD3(data) {
             return "linkId_" + i;
         })
         .on("click", function (d) {
-            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.type + "</p>";
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\"><b>" + d.source.title + "</b> <i>" + d.type + "</i> <b>" + d.target.title + "</b></p>";
+        })
+        .on("mouseover", function (d) {
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\"><b>" + d.source.title + "</b> <i>" + d.type + "</i> <b>" + d.target.title + "</b></p>";
         });
 
     pathtext = svg.append("g").selectAll("pathtext")
@@ -263,8 +265,10 @@ function setD3(data) {
         .call(force.drag)
         .on("click", function (d) {
             if (d3.event.defaultPrevented) return;
-            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.title + "</p>";
             updateD3(d.title);
+        })
+        .on("mouseover", function (d) {
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\"><b>" + d.title + "</b></p>";
         });
 
     text = svg.append("g").selectAll("text")
@@ -438,7 +442,10 @@ var drag = d3.behavior.drag()
             return "linkId_" + i;
         })
         .on("click", function (d) {
-            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.type + "</p>";
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\"><b>" + d.source.title + "</b> <i>" + d.type + "</i> <b>" + d.target.title + "</b></p>";
+        })
+        .on("mouseover", function (d) {
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\"><b>" + d.source.title + "</b> <i>" + d.type + "</i> <b>" + d.target.title + "</b></p>";
         });
 
     pathtext = svg.append("g").selectAll("pathtext")
@@ -459,8 +466,10 @@ var drag = d3.behavior.drag()
         .call(force.drag)
         .on("click", function (d) {
             if (d3.event.defaultPrevented) return;
-            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\">" + d.title + "</p>";
             updateD3(d.title);
+        })
+        .on("mouseover", function (d) {
+            document.getElementById("node").innerHTML = "<p style=\"margin:5px;\"><b>" + d.title + "</b></p>";
         });
 
     text = svg.append("g").selectAll("text")
